@@ -1,0 +1,1067 @@
+/* =========================================================
+   大富翁班級抽籤系統 - 現代明亮繽紛樣式
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap');
+
+:root {
+  --font-main: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+  --font-fun: 'Fredoka', 'Noto Sans TC', cursive, sans-serif;
+
+  /* 主題繽紛色票 */
+  --bg-color: #f3f8fe;
+  --board-bg: #ffffff;
+  --primary: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --accent-yellow: #fbbf24;
+  --accent-gold: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-pink: #ec4899;
+  --accent-green: #10b981;
+  --accent-purple: #8b5cf6;
+  --accent-orange: #f97316;
+  --accent-cyan: #06b6d4;
+
+  /* 卡片邊緣裝飾色票（大富翁經典街區色帶） */
+  --street-1: #ff5252;
+  --street-2: #ff793f;
+  --street-3: #ffb142;
+  --street-4: #2ed573;
+  --street-5: #1e90ff;
+  --street-6: #706fd3;
+  --street-7: #ff5252;
+  --street-8: #33d9b2;
+
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 22px rgba(245, 158, 11, 0.6);
+  --border-radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-color);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 60%);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* 頂部頂級導覽列 */
+.navbar {
+  width: 100%;
+  max-width: 1550px;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  animation: bounceSlow 3s infinite ease-in-out;
+}
+
+.brand-title {
+  font-family: var(--font-fun);
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 2px 0px #bfdbfe;
+}
+
+.class-badge {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  margin-left: 8px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  color: #334155;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-btn:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+.nav-btn:active {
+  transform: translateY(1px);
+}
+
+.nav-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.nav-btn.primary:hover {
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+/* 主遊戲區佈局 */
+.main-wrapper {
+  width: 100%;
+  max-width: 1600px;
+  padding: 0 12px 10px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 11 x 11 棋盤容器 */
+.board-container {
+  height: calc(100vh - 68px);
+  max-height: calc(100vh - 68px);
+  width: min(calc(100vh - 68px), calc(100vw - 24px));
+  aspect-ratio: 1 / 1;
+  background: var(--board-bg);
+  border-radius: 20px;
+  border: 5px solid #3b82f6;
+  box-shadow: 0 12px 36px rgba(30, 58, 138, 0.16), 0 0 0 8px #dbeafe;
+  display: grid;
+  grid-template-columns: 1.35fr repeat(9, 1fr) 1.35fr;
+  grid-template-rows: 1.35fr repeat(9, 1fr) 1.35fr;
+  gap: 4px;
+  padding: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 棋盤格子基礎樣式 */
+.cell {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* 格子邊緣彩色條帶（大富翁經典樣式） */
+.cell-banner {
+  height: 22%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  letter-spacing: 0.5px;
+}
+
+.cell-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.cell-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #1e293b;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.cell-score-box {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #fee2e2;
+  color: #ef4444;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.cell-score-box.zero {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.cell-score-box.plus {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* 4 個角落特殊格 */
+.cell.corner {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe);
+  border: 3px solid #3b82f6;
+  border-radius: 14px;
+  z-index: 2;
+}
+
+.cell.corner .cell-content {
+  justify-content: center;
+  gap: 6px;
+}
+
+.corner-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.corner-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #1e3a8a;
+}
+
+.corner-desc {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+/* 特殊機會命運非角落格 */
+.cell.special-cell {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+/* 走格高亮效果與光環動畫 */
+.cell.active-step {
+  transform: scale(1.08);
+  border-color: #f59e0b !important;
+  background: #fef3c7 !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), inset 0 0 10px rgba(245, 158, 11, 0.4);
+  z-index: 5;
+  animation: pulseStep 0.3s ease-in-out infinite alternate;
+}
+
+.cell.winner-selected {
+  transform: scale(1.14);
+  border: 4px solid #ef4444 !important;
+  background: #fee2e2 !important;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.9), inset 0 0 12px rgba(239, 68, 68, 0.4);
+  z-index: 6;
+  animation: pulseWinner 0.6s infinite alternate;
+}
+
+/* 棋子標記（大富翁探險家 / 金幣 / 指針） */
+.pawn-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background: radial-gradient(circle at 30% 30%, #fef08a, #eab308);
+  border: 2px solid #854d0e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  top: 4px;
+  right: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 7;
+  animation: bounceMarker 0.5s infinite alternate ease-in-out;
+  pointer-events: none;
+}
+
+/* 中央控制台 (Center Arena 9x9) */
+.board-center {
+  grid-column: 2 / 11;
+  grid-row: 2 / 11;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 18px;
+  border: 2px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 中央頂部：標題與抽籤提示 */
+.center-top-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.center-title {
+  font-family: var(--font-fun);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-pill {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 中央核心：3D 骰子舞台與大按鈕 */
+.dice-stage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: auto 0;
+  width: 100%;
+}
+
+/* 骰子展示區 */
+.dice-wrapper {
+  display: flex;
+  gap: 24px;
+  perspective: 1000px;
+  margin-bottom: 8px;
+}
+
+/* 3D 骰子主體 */
+.cube {
+  width: 90px;
+  height: 90px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(-20deg) rotateY(-20deg);
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cube.rolling {
+  animation: diceRollAnim 0.8s infinite linear;
+}
+
+.cube-face {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  background: #ffffff;
+  border: 3px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.1);
+  display: grid;
+  padding: 10px;
+}
+
+/* 骰子點數樣式 */
+.dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1e293b;
+  margin: auto;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.dot.red {
+  background: #ef4444;
+  width: 22px;
+  height: 22px;
+}
+
+/* 六面位置旋轉 */
+.face-1 { transform: rotateY(0deg) translateZ(45px); display: flex; align-items: center; justify-content: center; }
+.face-2 { transform: rotateY(90deg) translateZ(45px); grid-template-columns: 1fr 1fr; }
+.face-2 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+.face-2 .dot:nth-child(2) { grid-column: 2; grid-row: 2; }
+
+.face-3 { transform: rotateY(180deg) translateZ(45px); grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+.face-3 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+.face-3 .dot:nth-child(2) { grid-column: 2; grid-row: 2; }
+.face-3 .dot:nth-child(3) { grid-column: 3; grid-row: 3; }
+
+.face-4 { transform: rotateY(-90deg) translateZ(45px); grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.face-4 .dot.red { width: 18px; height: 18px; }
+
+.face-5 { transform: rotateX(90deg) translateZ(45px); grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+.face-5 .dot:nth-child(1) { grid-column: 1; grid-row: 1; }
+.face-5 .dot:nth-child(2) { grid-column: 3; grid-row: 1; }
+.face-5 .dot:nth-child(3) { grid-column: 2; grid-row: 2; }
+.face-5 .dot:nth-child(4) { grid-column: 1; grid-row: 3; }
+.face-5 .dot:nth-child(5) { grid-column: 3; grid-row: 3; }
+
+.face-6 { transform: rotateX(-90deg) translateZ(45px); grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+
+/* 擲骰大按鈕 */
+.btn-roll {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  border: none;
+  padding: 16px 42px;
+  font-family: var(--font-fun);
+  font-size: 1.75rem;
+  font-weight: 900;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-roll:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 14px 30px rgba(245, 158, 11, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+.btn-roll:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+.btn-roll:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 骰子模式切換 */
+.dice-mode-group {
+  display: flex;
+  gap: 8px;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #64748b;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 中央底部：即時抽籤歷史與最新結果速覽 */
+.center-bottom-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 10px;
+}
+
+.recent-history-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.recent-history-tags {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 80%;
+}
+
+.history-tag {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   彈窗模態框 (Result Modal, Event Modal, Settings Modal)
+   ========================================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  padding: 16px;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+  transform: scale(0.85) translateY(20px);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 4px solid #ffffff;
+}
+
+.modal-overlay.active .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+/* 抽中學生結果卡片 Header */
+.result-header {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  padding: 24px 20px;
+  text-align: center;
+  color: #ffffff;
+  position: relative;
+}
+
+.result-title {
+  font-family: var(--font-fun);
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.result-body {
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.winner-avatar-box {
+  width: 110px;
+  height: 110px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 4px solid #f59e0b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+  animation: floatAvatar 2s infinite ease-in-out;
+}
+
+.winner-info {
+  text-align: center;
+}
+
+.winner-seat {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #3b82f6;
+  background: #eff6ff;
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.winner-name {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: 2px;
+}
+
+.winner-score-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+/* 愛心加減分按鈕群組 */
+.score-action-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.btn-score-act {
+  flex: 1;
+  max-width: 140px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  font-size: 1.35rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-score-act:hover {
+  transform: translateY(-3px);
+}
+
+.btn-score-act:active {
+  transform: translateY(1px);
+}
+
+.btn-score-act.plus {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.btn-score-act.plus:hover {
+  background: #fecaca;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+}
+
+.btn-score-act.plus-bonus {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fcd34d;
+}
+
+.btn-score-act.plus-bonus:hover {
+  background: #fde68a;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+}
+
+.btn-score-act.minus {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.btn-score-act.minus:hover {
+  background: #e2e8f0;
+}
+
+.modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-modal-close {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 36px;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-modal-close:hover {
+  background: #334155;
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   特殊事件（機會 / 命運 / 角落大獎）卡片樣式
+   ========================================================= */
+.event-card-header {
+  padding: 24px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.event-card-header.chance {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+}
+
+.event-card-header.fate {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+.event-card-header.corner-event {
+  background: linear-gradient(135deg, #10b981, #047857);
+}
+
+.event-content-box {
+  padding: 30px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.event-icon-big {
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+.event-name {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.event-description {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.5;
+  background: #f8fafc;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 2px dashed #cbd5e1;
+  width: 100%;
+}
+
+.event-reward-tag {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+/* =========================================================
+   設定模態框 (Settings Modal)
+   ========================================================= */
+.settings-modal-card {
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-content {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #cbd5e1;
+  font-size: 1.1rem;
+  font-family: var(--font-main);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setting-input:focus {
+  border-color: #3b82f6;
+}
+
+.setting-textarea {
+  width: 100%;
+  height: 160px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 2px solid #cbd5e1;
+  font-size: 1.05rem;
+  font-family: monospace;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setting-textarea:focus {
+  border-color: #3b82f6;
+}
+
+.setting-help {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* 遮罩開關 Toggle Switch */
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.switch-input {
+  display: none;
+}
+
+.switch-track {
+  width: 52px;
+  height: 28px;
+  background: #cbd5e1;
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.switch-thumb {
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.switch-input:checked + .switch-track {
+  background: #3b82f6;
+}
+
+.switch-input:checked + .switch-track .switch-thumb {
+  transform: translateX(24px);
+}
+
+.settings-btn-group {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+/* 全螢幕 Canvas 慶祝紙花特效 */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99;
+}
+
+/* =========================================================
+   動畫 Keyframes
+   ========================================================= */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes bounceMarker {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-8px) scale(1.1); }
+}
+
+@keyframes pulseStep {
+  0% { transform: scale(1.04); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes pulseWinner {
+  0% { transform: scale(1.08); box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); }
+  100% { transform: scale(1.15); box-shadow: 0 0 35px rgba(239, 68, 68, 1); }
+}
+
+@keyframes floatAvatar {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(4deg); }
+}
+
+@keyframes diceRollAnim {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  100% { transform: rotateX(720deg) rotateY(1080deg) rotateZ(360deg); }
+}
+
+/* 響應式調整 */
+@media (max-width: 1024px) {
+  .board-container {
+    max-height: 90vw;
+  }
+  .cell-name {
+    font-size: 1.05rem;
+  }
+  .cell-banner {
+    font-size: 0.75rem;
+  }
+  .btn-roll {
+    font-size: 1.4rem;
+    padding: 12px 30px;
+  }
+  .cube {
+    width: 70px;
+    height: 70px;
+  }
+  .cube-face {
+    width: 70px;
+    height: 70px;
+  }
+  .face-1 { transform: rotateY(0deg) translateZ(35px); }
+  .face-2 { transform: rotateY(90deg) translateZ(35px); }
+  .face-3 { transform: rotateY(180deg) translateZ(35px); }
+  .face-4 { transform: rotateY(-90deg) translateZ(35px); }
+  .face-5 { transform: rotateX(90deg) translateZ(35px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(35px); }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .board-container {
+    border-width: 4px;
+    border-radius: 16px;
+  }
+  .cell-name {
+    font-size: 0.85rem;
+  }
+  .cell-score-box {
+    font-size: 0.75rem;
+    padding: 1px 4px;
+  }
+  .corner-icon {
+    font-size: 1.5rem;
+  }
+  .corner-title {
+    font-size: 0.9rem;
+  }
+  .corner-desc {
+    display: none;
+  }
+}

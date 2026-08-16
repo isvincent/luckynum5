@@ -1,930 +1,234 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>大富翁班級抽籤系統</title>
-<style>
-  :root{
-    --bg1:#FFF4D6; --bg2:#FFE2EF; --bg3:#DDF3FF;
-    --felt:#EEFBF3; --frame:#1F7A5C; --frame2:#12684B;
-    --ink:#2A2140; --ink-soft:#5b5470;
-    --edge-b:#FF6B6B;   /* 下排 珊瑚紅 */
-    --edge-l:#FFB020;   /* 左排 陽光橘 */
-    --edge-t:#3DA5FF;   /* 上排 天空藍 */
-    --edge-r:#2ED08A;   /* 右排 薄荷綠 */
-    --c-teacher:#12B5A6; /* 導師 */
-    --c-chance:#FB8C2E;  /* 機會 */
-    --c-principal:#F6B808;/* 校長 */
-    --c-destiny:#8B6BF7; /* 命運 */
-    --heart:#FF3D6E;
-    --card:#FFFFFF;
-    --shadow:0 10px 26px rgba(60,40,90,.18);
-    --font: "PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC",-apple-system,"Segoe UI",sans-serif;
-    --cell:60px;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;}
-  body{
-    font-family:var(--font);
-    color:var(--ink);
-    min-height:100vh;
-    background:
-      radial-gradient(1200px 600px at 12% -8%, var(--bg2), transparent 60%),
-      radial-gradient(1000px 620px at 92% 8%, var(--bg3), transparent 60%),
-      linear-gradient(160deg,var(--bg1),#FFEDDB 55%,var(--bg3));
-    background-attachment:fixed;
-    overflow-x:hidden;
-  }
-
-  /* ---------- 頁首 ---------- */
-  .topbar{
-    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    padding:12px clamp(10px,3vw,28px);
-  }
-  .brand-lockup{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
-  .logo-badge{
-    width:52px;height:52px;flex:none;border-radius:16px;
-    background:conic-gradient(from 40deg,var(--edge-b),var(--edge-l),var(--edge-t),var(--edge-r),var(--edge-b));
-    display:grid;place-items:center;font-size:28px;box-shadow:var(--shadow);
-    animation:spin 14s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .brand-text{min-width:0;}
-  .brand-text h1{
-    margin:0;font-size:clamp(19px,2.6vw,30px);font-weight:900;letter-spacing:.5px;
-    background:linear-gradient(90deg,#E23a6a,#F6890b,#2c8f66,#2472c4);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .brand-text .cls{
-    font-size:clamp(14px,2vw,19px);font-weight:800;color:var(--frame);
-    margin-top:1px;display:flex;align-items:center;gap:6px;
-  }
-  .topbtns{display:flex;gap:10px;flex:none;}
-  .tbtn{
-    border:none;cursor:pointer;font-family:var(--font);font-weight:900;
-    font-size:clamp(14px,1.8vw,17px);color:#fff;border-radius:14px;
-    padding:11px 16px;box-shadow:var(--shadow);transition:transform .12s ease, filter .12s ease;
-    display:flex;align-items:center;gap:7px;
-  }
-  .tbtn:hover{transform:translateY(-2px);filter:brightness(1.05);}
-  .tbtn:active{transform:translateY(0) scale(.97);}
-  .tbtn.settings{background:linear-gradient(135deg,#7C5CFC,#5b8def);}
-  .tbtn.download{background:linear-gradient(135deg,#12B5A6,#28c76f);}
-
-  /* ---------- 棋盤 ---------- */
-  .board-wrap{display:grid;place-items:center;padding:6px clamp(4px,2vw,20px) 26px;}
-  .board{
-    position:relative;
-    width:min(96vw, calc(100vh - 96px));
-    height:min(96vw, calc(100vh - 96px));
-    max-width:940px;max-height:940px;min-width:320px;min-height:320px;
-    display:grid;
-    grid-template-columns:repeat(11,1fr);
-    grid-template-rows:repeat(11,1fr);
-    gap:clamp(2px,.5vw,5px);
-    padding:clamp(6px,1.4vw,14px);
-    border-radius:26px;
-    background:
-      linear-gradient(150deg,#2aa07a,var(--frame) 40%,var(--frame2));
-    box-shadow:var(--shadow), inset 0 0 0 3px rgba(255,255,255,.15);
-  }
-
-  .cell{
-    position:relative;border-radius:11px;overflow:hidden;
-    background:var(--card);
-    box-shadow:0 2px 5px rgba(20,60,45,.22);
-    display:flex;flex-direction:column;justify-content:center;align-items:center;
-    text-align:center;cursor:pointer;user-select:none;
-    transition:transform .12s ease, box-shadow .12s ease;
-    padding:2px;
-  }
-  .cell:hover{transform:translateY(-2px) scale(1.02);z-index:3;box-shadow:0 8px 16px rgba(20,60,45,.3);}
-  .cell.dim{opacity:.55;filter:saturate(.6);}
-
-  /* 學生格：色帶為實際排版區塊，內容水平置中、四邊統一 */
-  .cell.e-b{flex-direction:column;}
-  .cell.e-t{flex-direction:column-reverse;}
-  .cell.e-l{flex-direction:row-reverse;}
-  .cell.e-r{flex-direction:row;}
-  .cell .band{flex:0 0 15%;align-self:stretch;background:var(--band,#ccc);}
-  .cbody{
-    flex:1 1 0;min-width:0;align-self:stretch;overflow:hidden;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:1px;padding:2px;
-  }
-  .seat{font-weight:900;font-size:calc(var(--cell)*.185);color:var(--ink-soft);line-height:1;}
-  .sname{font-weight:900;font-size:calc(var(--cell)*.26);color:var(--ink);line-height:1;letter-spacing:.5px;white-space:nowrap;}
-  .score{font-weight:900;font-size:calc(var(--cell)*.185);color:var(--heart);line-height:1;white-space:nowrap;}
-
-  /* 角落格 */
-  .cell.corner{align-items:center;justify-content:center;color:#fff;}
-  .cell.corner .cico{font-size:calc(var(--cell)*.55);line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));}
-  .cell.corner .clabel{font-weight:900;font-size:calc(var(--cell)*.26);margin-top:3px;letter-spacing:2px;}
-  .corner.teacher{background:linear-gradient(150deg,#22d3c4,var(--c-teacher));}
-  .corner.chance{background:linear-gradient(150deg,#ffab5e,var(--c-chance));}
-  .corner.principal{background:linear-gradient(150deg,#ffd24d,var(--c-principal));}
-  .corner.destiny{background:linear-gradient(150deg,#a892ff,var(--c-destiny));}
-
-  /* 機會/命運 補位格 */
-  .cell.filler{color:#fff;}
-  .cell.filler .cico{font-size:calc(var(--cell)*.42);}
-  .cell.filler .clabel{font-weight:900;font-size:calc(var(--cell)*.22);margin-top:2px;letter-spacing:1px;}
-  .filler.chance{background:linear-gradient(150deg,#ffb271,var(--c-chance));}
-  .filler.destiny{background:linear-gradient(150deg,#b6a4ff,var(--c-destiny));}
-
-  /* 命中閃爍 */
-  @keyframes flash{0%{box-shadow:0 0 0 0 rgba(255,214,64,.9);}100%{box-shadow:0 0 0 14px rgba(255,214,64,0);}}
-  .cell.flash{animation:flash .5s ease-out;z-index:4;}
-  @keyframes landed{0%,100%{transform:scale(1);}30%{transform:scale(1.14);}}
-  .cell.landed{animation:landed .6s ease;z-index:5;box-shadow:0 0 0 4px #FFD84D,0 10px 22px rgba(0,0,0,.28);}
-  @keyframes heartpulse{0%,100%{transform:scale(1);}40%{transform:scale(1.3);}}
-  .score.pulse{animation:heartpulse .5s ease;}
-
-  /* 棋子 */
-  .token{
-    position:absolute;left:0;top:0;z-index:20;pointer-events:none;
-    width:calc(var(--cell)*.66);height:calc(var(--cell)*.66);
-    display:grid;place-items:center;font-size:calc(var(--cell)*.5);
-    filter:drop-shadow(0 4px 5px rgba(0,0,0,.35));
-    transition:transform .22s cubic-bezier(.5,.05,.3,1.2);
-  }
-  .token .puck{
-    width:100%;height:100%;border-radius:50%;display:grid;place-items:center;
-    background:radial-gradient(circle at 35% 30%,#fff,#ffe08a 45%,#ff9d3d);
-    box-shadow:inset 0 -3px 6px rgba(180,90,0,.4);
-  }
-  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-14%);}}
-  .token.hop .puck{animation:bob .22s ease;}
-
-  /* ---------- 中央舞台 ---------- */
-  .center{
-    grid-row:2/11;grid-column:2/11;
-    border-radius:20px;
-    background:radial-gradient(120% 120% at 50% 0%, #ffffff, #FFF7EA 70%, #FFEFD6);
-    box-shadow:inset 0 0 0 3px rgba(255,255,255,.6), var(--shadow);
-    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
-    padding:clamp(8px,1.6vw,20px);overflow:hidden;text-align:center;position:relative;
-  }
-  .center .diag{
-    position:absolute;inset:0;pointer-events:none;opacity:.10;
-    background:repeating-linear-gradient(135deg,var(--edge-b) 0 10px,transparent 10px 22px);
-  }
-  .stage-title{font-weight:900;font-size:clamp(15px,2.4vw,28px);letter-spacing:2px;z-index:2;
-    background:linear-gradient(90deg,#E23a6a,#F6890b,#2c8f66,#2472c4);
-    -webkit-background-clip:text;background-clip:text;color:transparent;}
-  .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;width:100%;gap:6px;}
-
-  .hint{font-size:clamp(15px,2.4vw,26px);font-weight:800;color:var(--ink-soft);line-height:1.5;}
-  .hint .big{font-size:clamp(30px,6vw,64px);display:block;margin-bottom:6px;}
-
-  /* 學生揭曉卡 */
-  .reveal{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vw,10px);animation:pop .4s cubic-bezier(.2,1.3,.4,1);}
-  @keyframes pop{0%{transform:scale(.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
-  .reveal .rseat{
-    font-weight:900;color:#fff;background:var(--frame);
-    padding:4px 16px;border-radius:999px;font-size:clamp(15px,2.4vw,24px);letter-spacing:1px;
-  }
-  .reveal .rname{
-    font-weight:900;font-size:clamp(40px,10vw,110px);line-height:1;letter-spacing:4px;
-    color:var(--ink);
-    text-shadow:2px 3px 0 #FFD84D;
-  }
-  .reveal .rscore{font-size:clamp(22px,4vw,44px);font-weight:900;color:var(--heart);letter-spacing:1px;}
-  .heartbtns{display:flex;gap:clamp(8px,2vw,18px);margin-top:4px;}
-  .hbtn{
-    border:none;cursor:pointer;font-family:var(--font);font-weight:900;color:#fff;
-    font-size:clamp(18px,3vw,30px);padding:clamp(8px,1.5vw,14px) clamp(14px,3vw,26px);
-    border-radius:16px;box-shadow:var(--shadow);transition:transform .1s ease,filter .1s ease;
-    display:flex;align-items:center;gap:6px;
-  }
-  .hbtn:active{transform:scale(.93);}
-  .hbtn.plus{background:linear-gradient(135deg,#ff6a9c,#ff3d6e);}
-  .hbtn.minus{background:linear-gradient(135deg,#8fa3b8,#5f7086);}
-
-  /* 事件卡 */
-  .event{display:flex;flex-direction:column;align-items:center;gap:8px;animation:pop .4s cubic-bezier(.2,1.3,.4,1);}
-  .event .eico{font-size:clamp(46px,10vw,96px);line-height:1;animation:bob .8s ease-in-out infinite;}
-  .event .etag{font-weight:900;color:#fff;padding:5px 20px;border-radius:999px;font-size:clamp(17px,3vw,28px);letter-spacing:3px;}
-  .event .etitle{font-weight:900;font-size:clamp(20px,4vw,40px);color:var(--ink);line-height:1.25;max-width:96%;}
-  .event .eresult{font-weight:800;font-size:clamp(15px,2.5vw,24px);color:var(--frame);}
-
-  /* 骰子區 */
-  .dice-zone{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.4vw,14px);z-index:2;width:100%;}
-  .dice-row{display:flex;gap:clamp(10px,2vw,20px);}
-  .die{
-    width:clamp(46px,8.5vw,86px);height:clamp(46px,8.5vw,86px);
-    background:linear-gradient(150deg,#fff,#f1f1f6);border-radius:18%;
-    box-shadow:0 6px 12px rgba(60,40,90,.25),inset 0 -4px 8px rgba(0,0,0,.08);
-    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
-    padding:14%;gap:4%;
-  }
-  .die.rolling{animation:shake .12s linear infinite;}
-  @keyframes shake{0%{transform:translate(0,0) rotate(0);}25%{transform:translate(-3px,2px) rotate(-8deg);}50%{transform:translate(3px,-2px) rotate(6deg);}75%{transform:translate(-2px,-3px) rotate(-4deg);}100%{transform:translate(0,0) rotate(0);}}
-  .pip{border-radius:50%;background:transparent;}
-  .pip.on{background:radial-gradient(circle at 35% 30%,#ff6a9c,#e2295a);box-shadow:inset 0 -1px 2px rgba(0,0,0,.3);}
-
-  .roll-btn{
-    border:none;cursor:pointer;font-family:var(--font);font-weight:900;color:#fff;
-    font-size:clamp(19px,3.4vw,32px);letter-spacing:3px;
-    padding:clamp(10px,1.8vw,18px) clamp(24px,5vw,56px);border-radius:20px;
-    background:linear-gradient(135deg,#FF8A3D,#FF3D6E 60%,#c92c86);
-    box-shadow:0 8px 0 #b32760,var(--shadow);
-    transition:transform .1s ease, box-shadow .1s ease, filter .12s ease;
-    display:flex;align-items:center;gap:10px;
-  }
-  .roll-btn:hover{filter:brightness(1.05);}
-  .roll-btn:active{transform:translateY(6px);box-shadow:0 2px 0 #b32760;}
-  .roll-btn:disabled{filter:grayscale(.5) brightness(.9);cursor:not-allowed;box-shadow:0 4px 0 #999;}
-
-  /* ---------- 彩帶 ---------- */
-  .confetti{position:fixed;inset:0;pointer-events:none;z-index:900;overflow:hidden;}
-  .conf{position:absolute;font-size:24px;will-change:transform,opacity;}
-  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
-
-  /* ---------- 設定 / 對話框 ---------- */
-  .overlay{
-    position:fixed;inset:0;z-index:1000;background:rgba(30,20,50,.5);
-    display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);
-  }
-  .overlay.show{display:flex;animation:fade .2s ease;}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
-  .panel{
-    background:#fff;border-radius:24px;box-shadow:var(--shadow);
-    width:min(560px,96vw);max-height:92vh;overflow:auto;padding:22px clamp(16px,3vw,28px);
-    animation:pop .3s cubic-bezier(.2,1.2,.4,1);
-  }
-  .panel h2{margin:0 0 4px;font-size:24px;font-weight:900;display:flex;align-items:center;gap:8px;
-    background:linear-gradient(90deg,#7C5CFC,#3DA5FF);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .panel .sub{color:var(--ink-soft);font-size:14px;margin-bottom:16px;}
-  .field{margin-bottom:18px;}
-  .field label{display:block;font-weight:900;font-size:16px;margin-bottom:7px;color:var(--ink);}
-  .field input[type=text],.field textarea{
-    width:100%;font-family:var(--font);font-size:16px;border:2.5px solid #e6e1f2;border-radius:12px;
-    padding:11px 13px;color:var(--ink);background:#fbfaff;transition:border-color .15s;
-  }
-  .field input:focus,.field textarea:focus{outline:none;border-color:#7C5CFC;}
-  .field textarea{min-height:190px;resize:vertical;line-height:1.7;font-weight:700;}
-  .field .tip{font-size:12.5px;color:var(--ink-soft);margin-top:6px;}
-  .switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-    background:#f6f3ff;border-radius:14px;padding:12px 15px;}
-  .switch-row .st{font-weight:900;font-size:16px;}
-  .switch-row .sd{font-size:12.5px;color:var(--ink-soft);}
-  .switch{position:relative;width:60px;height:33px;flex:none;}
-  .switch input{opacity:0;width:0;height:0;}
-  .slider{position:absolute;inset:0;background:#cfc9de;border-radius:999px;transition:.2s;cursor:pointer;}
-  .slider::before{content:"";position:absolute;height:25px;width:25px;left:4px;top:4px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.2);}
-  .switch input:checked + .slider{background:#7C5CFC;}
-  .switch input:checked + .slider::before{transform:translateX(27px);}
-  .panel-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
-  .pbtn{border:none;cursor:pointer;font-family:var(--font);font-weight:900;font-size:16px;
-    padding:12px 18px;border-radius:14px;color:#fff;transition:transform .1s,filter .1s;flex:1;min-width:120px;}
-  .pbtn:active{transform:scale(.96);}
-  .pbtn.apply{background:linear-gradient(135deg,#12B5A6,#28c76f);}
-  .pbtn.reset{background:linear-gradient(135deg,#ff9a3d,#ff6a3d);}
-  .pbtn.cancel{background:#8b849e;}
-  .pbtn.ghost{background:#ef476f;}
-
-  @media (max-width:520px){
-    .brand-text h1{font-size:18px;} .logo-badge{width:44px;height:44px;font-size:22px;}
-    .tbtn span.lbl{display:none;} .tbtn{padding:11px 13px;}
-  }
-  @media (prefers-reduced-motion:reduce){
-    *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.05ms !important;}
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大富翁班級抽籤系統 | 歡樂課堂互動</title>
+  <meta name="description" content="明亮色彩大富翁棋盤式學生抽籤與愛心計分系統，具備流暢擲骰動畫、Web Audio 內建音效、機會命運特殊事件與名單下載匯出。">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="brand-lockup">
-      <div class="logo-badge">🎲</div>
-      <div class="brand-text">
-        <h1>大富翁班級抽籤</h1>
-        <div class="cls">🏫 <span id="clsName">快樂班</span></div>
-      </div>
+  <!-- 全螢幕彩帶碎紙特效畫布 -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- 頂部功能導覽列 -->
+  <header class="navbar">
+    <div class="brand-section">
+      <div class="brand-icon">🎲</div>
+      <h1 class="brand-title">大富翁課堂抽籤系統</h1>
+      <span class="class-badge" id="class-name-badge">102班</span>
     </div>
-    <div class="topbtns">
-      <button class="tbtn download" id="btnDownload" title="下載名單與分數">⬇️ <span class="lbl">下載名單</span></button>
-      <button class="tbtn settings" id="btnSettings" title="設定">⚙️ <span class="lbl">設定</span></button>
+
+    <div class="nav-actions">
+      <button class="nav-btn primary" id="btn-download-list" title="下載名單與分數清單文字檔">
+        <span>📥</span> 下載成績清單
+      </button>
+      <button class="nav-btn" id="btn-sound-toggle" title="切換音效開關">
+        <span>🔊</span> 音效開
+      </button>
+      <button class="nav-btn" id="btn-open-settings" title="自訂班級、名單與姓名遮罩">
+        <span>⚙️</span> 設定
+      </button>
     </div>
   </header>
 
-  <div class="board-wrap">
-    <div class="board" id="board">
-      <!-- 40 個外圈格由 JS 產生 -->
-      <div class="center">
-        <div class="diag"></div>
-        <div class="stage-title">🎡 抽籤舞台</div>
-        <div class="stage" id="stage"></div>
-        <div class="dice-zone">
-          <div class="dice-row">
-            <div class="die" id="die1"></div>
-            <div class="die" id="die2"></div>
+  <!-- 主遊戲大富翁棋盤區 -->
+  <main class="main-wrapper">
+    <div class="board-container" id="game-board">
+
+      <!-- 中央控制台 (佔據 9x9 區域) -->
+      <div class="board-center">
+        <!-- 頂部資訊列 -->
+        <div class="center-top-bar">
+          <div class="center-title">
+            <span>✨</span> 課堂幸運輪盤
           </div>
-          <button class="roll-btn" id="rollBtn">🎲 擲骰抽籤</button>
+          <div class="quick-stats">
+            <div class="stat-pill" title="已抽籤總次數">
+              <span>🎯 抽籤次數：</span>
+              <strong id="stat-total-drawn">0 次</strong>
+            </div>
+            <div class="stat-pill" title="全班目前累積愛心總分">
+              <span>💖 全班總分：</span>
+              <strong id="stat-total-score">0 ❤️</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 骰子與操作主舞台 -->
+        <div class="dice-stage-container">
+          <div class="dice-mode-group">
+            <button class="mode-btn active" data-dice="1">單顆骰子 (1-6)</button>
+            <button class="mode-btn" data-dice="2">雙顆骰子 (2-12)</button>
+          </div>
+
+          <!-- 3D 骰子視覺容器 -->
+          <div class="dice-wrapper">
+            <!-- 骰子 1 -->
+            <div class="cube" id="dice-1">
+              <div class="cube-face face-1"><span class="dot red"></span></div>
+              <div class="cube-face face-2"><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-3"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-4"><span class="dot red"></span><span class="dot red"></span><span class="dot red"></span><span class="dot red"></span></div>
+              <div class="cube-face face-5"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-6"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            </div>
+
+            <!-- 骰子 2 (預設隱藏) -->
+            <div class="cube" id="dice-2" style="display: none;">
+              <div class="cube-face face-1"><span class="dot red"></span></div>
+              <div class="cube-face face-2"><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-3"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-4"><span class="dot red"></span><span class="dot red"></span><span class="dot red"></span><span class="dot red"></span></div>
+              <div class="cube-face face-5"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="cube-face face-6"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            </div>
+          </div>
+
+          <!-- 擲骰抽籤大按鈕 -->
+          <button class="btn-roll" id="btn-roll">
+            <span>🎲</span> 擲骰子抽籤 (Space)
+          </button>
+        </div>
+
+        <!-- 底部抽籤歷史 -->
+        <div class="center-bottom-bar">
+          <span class="recent-history-label">🕒 最近抽出：</span>
+          <div class="recent-history-tags" id="history-tags">
+            <span class="history-tag">尚無抽籤紀錄</span>
+          </div>
         </div>
       </div>
-      <div class="token" id="token"><div class="puck">🐶</div></div>
+
+      <!-- 棋盤四周的 40 個格子（由 app.js 動態精準渲染） -->
+
+    </div>
+  </main>
+
+  <!-- =========================================================
+       1. 學生抽中結果彈窗
+       ========================================================= -->
+  <div class="modal-overlay" id="result-modal">
+    <div class="modal-card">
+      <div class="result-header">
+        <div class="result-title">🎉 恭喜幸運抽中！</div>
+      </div>
+      <div class="result-body">
+        <div class="winner-avatar-box" id="winner-avatar">🎓</div>
+        <div class="winner-info">
+          <div class="winner-seat" id="winner-seat">座號 No. 1</div>
+          <div class="winner-name" id="winner-name">王○晴</div>
+          <div class="winner-score-display">
+            <span>現有愛心：</span>
+            <span id="winner-score">0</span>
+            <span>❤️</span>
+          </div>
+        </div>
+
+        <!-- 愛心調整按鈕組 -->
+        <div class="score-action-group">
+          <button class="btn-score-act plus" id="btn-plus-1" title="增加 1 顆愛心">
+            <span>❤️</span> +1
+          </button>
+          <button class="btn-score-act plus-bonus" id="btn-plus-5" title="表現優異大獎勵 +5">
+            <span>🌟</span> +5
+          </button>
+          <button class="btn-score-act minus" id="btn-minus-1" title="扣除 1 顆愛心">
+            <span>💔</span> -1
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-close btn-close-modal">確認完成</button>
+      </div>
     </div>
   </div>
 
-  <div class="confetti" id="confetti"></div>
-
-  <!-- 設定對話框 -->
-  <div class="overlay" id="settingsOverlay">
-    <div class="panel">
-      <h2>⚙️ 設定</h2>
-      <div class="sub">更換班級名稱、編輯名單，或開關姓名遮罩。</div>
-
-      <div class="field">
-        <label>🏫 班級名稱</label>
-        <input type="text" id="inpClass" placeholder="例如：五年八班">
+  <!-- =========================================================
+       2. 特殊事件（機會 / 命運 / 角落大獎）彈窗
+       ========================================================= -->
+  <div class="modal-overlay" id="event-modal">
+    <div class="modal-card">
+      <div class="event-card-header chance" id="event-modal-header">
+        <div class="result-title" id="event-title">🎲 班級機會事件</div>
       </div>
+      <div class="event-content-box">
+        <div class="event-icon-big" id="event-icon">📖</div>
+        <div class="event-description" id="event-desc">
+          主動朗讀下一段課文，表現優異獲得愛心獎勵！
+        </div>
+        <div class="event-reward-tag" id="event-reward">
+          獎勵：+3 ❤️ 愛心
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-close btn-close-modal">太棒了！</button>
+      </div>
+    </div>
+  </div>
 
-      <div class="field">
-        <div class="switch-row">
-          <div>
-            <div class="st">🕶️ 姓名隱私遮罩（○）</div>
-            <div class="sd">開啟後名字中間會以「○」顯示，保護隱私。</div>
+  <!-- =========================================================
+       3. 班級與學生設定彈窗 (Settings Modal)
+       ========================================================= -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-card settings-modal-card">
+      <div class="settings-header">
+        <div class="settings-title">
+          <span>⚙️</span> 班級與學生名單設定
+        </div>
+        <button class="nav-btn btn-close-modal" style="padding: 4px 10px;">✕</button>
+      </div>
+      <div class="settings-content">
+        <!-- 班級名稱 -->
+        <div class="setting-item">
+          <label class="setting-label" for="input-class-name">班級名稱</label>
+          <input type="text" id="input-class-name" class="setting-input" value="102班" placeholder="請輸入班級名稱">
+        </div>
+
+        <!-- 姓名隱私遮罩開關 -->
+        <div class="setting-item">
+          <div class="setting-label">
+            <span>姓名隱私遮罩 (○)</span>
+            <label class="switch-container">
+              <input type="checkbox" id="switch-mask" class="switch-input" checked>
+              <div class="switch-track">
+                <div class="switch-thumb"></div>
+              </div>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="inpMask">
-            <span class="slider"></span>
+          <p class="setting-help">開啟後，學生姓名將自動以「○」遮蔽中間字以保護學生隱私。</p>
+        </div>
+
+        <!-- 學生名單編輯與匯入 -->
+        <div class="setting-item">
+          <label class="setting-label" for="input-student-list">
+            <span>學生名單（每行一位，可包含座號）</span>
           </label>
+          <textarea id="input-student-list" class="setting-textarea" placeholder="例如：
+1 王大明
+2 李小華
+3 張同學"></textarea>
+          <p class="setting-help">支援 36 位或任意人數。不足 36 位時，剩餘格子將自動由「機會」與「命運」特殊格填補。</p>
+        </div>
+
+        <!-- 分數重設 -->
+        <div class="setting-item" style="padding-top: 8px;">
+          <button type="button" class="nav-btn" id="btn-reset-scores" style="color: #ef4444; border-color: #fca5a5;">
+            <span>🔄</span> 重設所有學生愛心分數為 0
+          </button>
         </div>
       </div>
 
-      <div class="field">
-        <label>👥 學生名單</label>
-        <textarea id="inpStudents" spellcheck="false"></textarea>
-        <div class="tip">每行一位：可寫「座號 姓名」（例：1 王小明），或只寫姓名（座號自動編）。最多 36 位；不足 36 位的格子會自動以「機會 / 命運」補上。</div>
-      </div>
-
-      <div class="panel-actions">
-        <button class="pbtn apply" id="btnApply">✅ 套用</button>
-        <button class="pbtn ghost" id="btnResetScores">🧹 分數歸零</button>
-        <button class="pbtn reset" id="btnResetAll">↩️ 還原預設</button>
-        <button class="pbtn cancel" id="btnCancel">取消</button>
+      <div class="settings-btn-group">
+        <button class="nav-btn btn-close-modal">取消</button>
+        <button class="nav-btn primary" id="btn-save-settings">儲存並更新棋盤</button>
       </div>
     </div>
   </div>
 
-<script>
-/* ============================================================
-   資料與預設
-============================================================ */
-const DEFAULT_CLASS = "快樂班";
-const DEFAULT_LIST = `1 王○晴
-2 王○萱
-3 任○珍
-4 呂○潼
-5 宋○昀
-6 施○瑄
-7 洪○綺
-8 孫○涵
-9 徐○柔
-10 張○妮
-11 許○慈
-12 陳○瑄
-13 陳○彤
-14 黄○雅
-15 傅○綺
-16 曾○晴
-17 曾○彤
-18 温○芮
-19 黃○晴
-20 黃○琳
-21 楊○潔
-22 詹○瑊
-23 潘○辰
-24 鄧○予
-25 鄭○沁
-26 戴○鋡
-27 鍾○霓
-28 王○騰
-29 林○緯
-30 范○丞
-31 莊○瀚
-32 陳○元
-33 黃○豪
-34 詹○嘉
-35 劉○佳`;
-
-const state = {
-  className: DEFAULT_CLASS,
-  mask: true,
-  students: [],   // {seat, name, score}
-  cells: [],      // 40 格 {type, ...}
-  tokenPos: 0,
-  lastSeat: null,
-};
-
-/* 外圈 40 格的 grid 座標（11x11，逆時針，從右下角起） */
-const layout = new Array(40);
-layout[0]={r:11,c:11};
-for(let i=1;i<=9;i++)  layout[i]={r:11,c:11-i};
-layout[10]={r:11,c:1};
-for(let i=11;i<=19;i++)layout[i]={r:11-(i-10),c:1};
-layout[20]={r:1,c:1};
-for(let i=21;i<=29;i++)layout[i]={r:1,c:(i-20)+1};
-layout[30]={r:1,c:11};
-for(let i=31;i<=39;i++)layout[i]={r:(i-30)+1,c:11};
-
-/* 角落與邊 */
-const CORNERS = {
-  0 : {type:"corner", kind:"teacher",  icon:"👩‍🏫", label:"導師"},
-  10: {type:"corner", kind:"chance",   icon:"❓",   label:"機會"},
-  20: {type:"corner", kind:"principal",icon:"👑",   label:"校長"},
-  30: {type:"corner", kind:"destiny",  icon:"🔮",   label:"命運"},
-};
-/* 邊索引（依序放 36 位學生） */
-const EDGE_INDICES = [
-  ...[1,2,3,4,5,6,7,8,9],       // 下
-  ...[11,12,13,14,15,16,17,18,19], // 左
-  ...[21,22,23,24,25,26,27,28,29], // 上
-  ...[31,32,33,34,35,36,37,38,39], // 右
-];
-function edgeClass(i){
-  if(i>=1&&i<=9)   return "e-b";
-  if(i>=11&&i<=19) return "e-l";
-  if(i>=21&&i<=29) return "e-t";
-  return "e-r";
-}
-function edgeBand(i){
-  if(i>=1&&i<=9)   return "var(--edge-b)";
-  if(i>=11&&i<=19) return "var(--edge-l)";
-  if(i>=21&&i<=29) return "var(--edge-t)";
-  return "var(--edge-r)";
-}
-
-/* ============================================================
-   名單解析與遮罩
-============================================================ */
-function parseList(text){
-  const out=[];
-  let auto=1;
-  text.split(/\r?\n/).forEach(line=>{
-    const t=line.trim();
-    if(!t) return;
-    const m=t.match(/^(\d+)[\s\.\:、,，]+(.+)$/);
-    if(m){ out.push({seat:parseInt(m[1],10), name:m[2].trim(), score:0}); auto=parseInt(m[1],10)+1; }
-    else { out.push({seat:auto++, name:t, score:0}); }
-  });
-  return out.slice(0,36);
-}
-function maskName(raw){
-  if(!state.mask) return raw;
-  const ch=[...raw];
-  if(ch.length<=1) return raw;
-  if(ch.length===2) return ch[0]+"○";
-  return ch[0] + ch.slice(1,-1).map(()=>"○").join("") + ch[ch.length-1];
-}
-
-/* ============================================================
-   建立棋格資料
-============================================================ */
-function buildCells(){
-  const cells=new Array(40).fill(null);
-  // 角落
-  for(const k in CORNERS){ cells[+k]={...CORNERS[k], idx:+k}; }
-  // 學生
-  const stu=state.students;
-  EDGE_INDICES.forEach((gi,pos)=>{
-    if(pos<stu.length){
-      cells[gi]={type:"student", idx:gi, ref:pos}; // ref = students 陣列位置
-    }else{
-      // 不足者以機會 / 命運交替補位
-      const isChance = ((pos-stu.length)%2===0);
-      cells[gi]= isChance
-        ? {type:"filler", kind:"chance", icon:"❓", label:"機會", idx:gi}
-        : {type:"filler", kind:"destiny", icon:"🔮", label:"命運", idx:gi};
-    }
-  });
-  state.cells=cells;
-}
-
-/* ============================================================
-   繪製棋盤
-============================================================ */
-const board=document.getElementById("board");
-const token=document.getElementById("token");
-let cellEls=new Array(40);
-
-function renderBoard(){
-  // 移除舊格
-  board.querySelectorAll(".cell").forEach(e=>e.remove());
-  cellEls=new Array(40);
-  for(let i=0;i<40;i++){
-    const data=state.cells[i];
-    const el=document.createElement("div");
-    el.className="cell";
-    el.style.gridRow=layout[i].r;
-    el.style.gridColumn=layout[i].c;
-    el.dataset.idx=i;
-
-    if(data.type==="corner"){
-      el.classList.add("corner",data.kind);
-      el.innerHTML=`<div class="cico">${data.icon}</div><div class="clabel">${data.label}</div>`;
-    }else if(data.type==="filler"){
-      el.classList.add("filler",data.kind);
-      el.innerHTML=`<div class="cico">${data.icon}</div><div class="clabel">${data.label}</div>`;
-    }else{ // student
-      const s=state.students[data.ref];
-      el.classList.add(edgeClass(i));
-      el.innerHTML=`
-        <i class="band" style="--band:${edgeBand(i)}"></i>
-        <div class="cbody">
-          <div class="seat">${s.seat}</div>
-          <div class="sname">${maskName(s.name)}</div>
-          <div class="score">❤️${s.score}</div>
-        </div>`;
-      el.addEventListener("click",()=>{ if(!rolling) manualPick(i); });
-    }
-    board.insertBefore(el, board.querySelector(".center").nextSibling);
-    cellEls[i]=el;
-  }
-  updateCellVar();
-  positionToken(state.tokenPos,true);
-}
-
-function updateStudentCell(ref){
-  const gi=EDGE_INDICES[ref];
-  const el=cellEls[gi];
-  if(!el) return;
-  const s=state.students[ref];
-  const sc=el.querySelector(".score");
-  sc.textContent="❤️"+s.score;
-  sc.classList.remove("pulse"); void sc.offsetWidth; sc.classList.add("pulse");
-}
-
-/* 依棋盤尺寸調整字級單位 */
-function updateCellVar(){
-  const size=board.clientWidth;
-  document.documentElement.style.setProperty("--cell",(size/11)+"px");
-}
-
-/* ============================================================
-   棋子定位
-============================================================ */
-function positionToken(idx,instant){
-  const cell=cellEls[idx];
-  if(!cell) return;
-  const b=board.getBoundingClientRect();
-  const r=cell.getBoundingClientRect();
-  const x=r.left-b.left + r.width/2;
-  const y=r.top-b.top + r.height/2;
-  if(instant){ token.style.transition="none"; }
-  token.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`;
-  if(instant){ void token.offsetWidth; token.style.transition=""; }
-}
-
-/* ============================================================
-   音效（Web Audio 合成，無外部檔）
-============================================================ */
-class Sfx{
-  constructor(){ this.ctx=null; }
-  ensure(){
-    if(!this.ctx){ try{ this.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-    if(this.ctx&&this.ctx.state==="suspended") this.ctx.resume();
-  }
-  tone(freq,dur,type="sine",vol=0.22,delay=0){
-    if(!this.ctx) return;
-    const t=this.ctx.currentTime+delay;
-    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
-    o.type=type; o.frequency.setValueAtTime(freq,t);
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(vol,t+0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(g); g.connect(this.ctx.destination);
-    o.start(t); o.stop(t+dur+0.02);
-  }
-  dice(){
-    if(!this.ctx) return;
-    for(let i=0;i<11;i++){
-      this.tone(140+Math.random()*260, 0.05, "square", 0.10, i*0.055);
-    }
-  }
-  step(i){ this.tone(430+ (i%6)*55, 0.09,"triangle",0.16); }
-  land(){
-    const seq=[523.25,659.25,783.99,1046.5];
-    seq.forEach((f,i)=>this.tone(f,0.28,"sine",0.24,i*0.09));
-    this.tone(1318.5,0.4,"sine",0.18,0.42);
-  }
-  plus(){ this.tone(660,0.1,"sine",0.22); this.tone(990,0.16,"sine",0.22,0.09); }
-  minus(){ this.tone(400,0.12,"sine",0.2); this.tone(260,0.18,"sine",0.2,0.1); }
-  event(){
-    [784,988,1175,1568].forEach((f,i)=>this.tone(f,0.22,"triangle",0.18,i*0.07));
-  }
-}
-const sfx=new Sfx();
-
-/* ============================================================
-   骰子面繪製
-============================================================ */
-const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
-function drawDie(el,val){
-  let html="";
-  for(let i=0;i<9;i++) html+=`<div class="pip ${PIPS[val].includes(i)?"on":""}"></div>`;
-  el.innerHTML=html;
-}
-const die1=document.getElementById("die1"), die2=document.getElementById("die2");
-drawDie(die1,1); drawDie(die2,1);
-
-/* ============================================================
-   舞台顯示
-============================================================ */
-const stage=document.getElementById("stage");
-function showHint(){
-  stage.innerHTML=`<div class="hint"><span class="big">🎯</span>按下「擲骰抽籤」<br>讓 🐶 環遊棋盤，抽出幸運同學！</div>`;
-}
-function showStudent(ref){
-  const s=state.students[ref];
-  stage.innerHTML=`
-    <div class="reveal">
-      <div class="rseat">座號 ${s.seat}</div>
-      <div class="rname">${maskName(s.name)}</div>
-      <div class="rscore">❤️ <span id="rvScore">${s.score}</span> 分</div>
-      <div class="heartbtns">
-        <button class="hbtn minus" id="hMinus">➖ 1 ❤️</button>
-        <button class="hbtn plus"  id="hPlus">➕ 1 ❤️</button>
-      </div>
-    </div>`;
-  document.getElementById("hPlus").onclick=()=>changeScore(ref,+1);
-  document.getElementById("hMinus").onclick=()=>changeScore(ref,-1);
-}
-function showEvent(kind,label,icon,title,result){
-  const bg={teacher:"var(--c-teacher)",chance:"var(--c-chance)",principal:"var(--c-principal)",destiny:"var(--c-destiny)"}[kind];
-  stage.innerHTML=`
-    <div class="event">
-      <div class="eico">${icon}</div>
-      <div class="etag" style="background:${bg}">${label}</div>
-      <div class="etitle">${title}</div>
-      <div class="eresult">${result}</div>
-    </div>`;
-}
-
-function changeScore(ref,delta){
-  const s=state.students[ref];
-  s.score+=delta;
-  updateStudentCell(ref);
-  const rv=document.getElementById("rvScore");
-  if(rv) rv.textContent=s.score;
-  delta>0?sfx.plus():sfx.minus();
-  if(delta>0) miniHearts();
-}
-
-/* ============================================================
-   角落 / 補位事件
-============================================================ */
-function randStudent(){ return Math.floor(Math.random()*state.students.length); }
-function allPlus(n){ state.students.forEach((s,i)=>{s.score+=n; updateStudentCell(i);}); }
-
-const EVENTS={
-  chance:[
-    ()=>{ const r=randStudent(); state.students[r].score+=3; updateStudentCell(r);
-          return `🎉 幸運轉盤！<b>${state.students[r].seat} ${maskName(state.students[r].name)}</b> +3 ❤️`; },
-    ()=>{ allPlus(1); return `🙌 全班歡呼！每人 +1 ❤️（共 ${state.students.length} 人）`; },
-    ()=>{ let c=0; state.students.forEach((s,i)=>{ if(s.seat%2===1){s.score++;updateStudentCell(i);c++;}});
-          return `✨ 幸運單數！座號單數的 ${c} 位同學 +1 ❤️`; },
-    ()=>{ if(state.lastSeat!=null){ const i=state.students.findIndex(s=>s.seat===state.lastSeat);
-          if(i>=0){state.students[i].score+=2;updateStudentCell(i);
-          return `🎁 神秘禮物！上一位 <b>${state.students[i].seat} ${maskName(state.students[i].name)}</b> +2 ❤️`;}}
-          const r=randStudent(); state.students[r].score+=2; updateStudentCell(r);
-          return `🎁 神秘禮物！<b>${state.students[r].seat} ${maskName(state.students[r].name)}</b> +2 ❤️`; },
-  ],
-  destiny:[
-    ()=>{ const r=randStudent(); state.students[r].score+=2; updateStudentCell(r);
-          return `🔮 命運眷顧！<b>${state.students[r].seat} ${maskName(state.students[r].name)}</b> +2 ❤️`; },
-    ()=>{ allPlus(1); return `🤝 團隊精神！全班 +1 ❤️`; },
-    ()=>{ let c=0; state.students.forEach((s,i)=>{ if(s.seat%2===0){s.score++;updateStudentCell(i);c++;}});
-          return `🌟 幸運雙數！座號雙數的 ${c} 位同學 +1 ❤️`; },
-    ()=>{ let min=Math.min(...state.students.map(s=>s.score));
-          let cands=state.students.map((s,i)=>({s,i})).filter(o=>o.s.score===min);
-          const pick=cands[Math.floor(Math.random()*cands.length)];
-          pick.s.score+=2; updateStudentCell(pick.i);
-          return `💪 逆轉勝！鼓勵 <b>${pick.s.seat} ${maskName(pick.s.name)}</b> +2 ❤️`; },
-  ],
-  teacher:[
-    ()=>{ allPlus(2); return `🧋 導師請喝飲料！全班 +2 ❤️`; },
-    ()=>{ const r=randStudent(); state.students[r].score+=3; updateStudentCell(r);
-          return `📣 導師點名！認真的 <b>${state.students[r].seat} ${maskName(state.students[r].name)}</b> +3 ❤️`; },
-    ()=>{ allPlus(1); return `🏅 班級榮譽！全班 +1 ❤️`; },
-  ],
-  principal:[
-    ()=>{ allPlus(3); return `👑 校長嘉獎！全班 +3 ❤️`; },
-    ()=>{ let max=Math.max(...state.students.map(s=>s.score));
-          let cands=state.students.map((s,i)=>({s,i})).filter(o=>o.s.score===max);
-          const pick=cands[Math.floor(Math.random()*cands.length)];
-          pick.s.score+=2; updateStudentCell(pick.i);
-          return `🎓 校長獎學金！領先的 <b>${pick.s.seat} ${maskName(pick.s.name)}</b> +2 ❤️`; },
-    ()=>{ allPlus(2); return `🌈 全校表揚！全班 +2 ❤️`; },
-  ],
-};
-const KIND_META={
-  teacher:{icon:"👩‍🏫",label:"導師"},
-  chance:{icon:"❓",label:"機會"},
-  principal:{icon:"👑",label:"校長"},
-  destiny:{icon:"🔮",label:"命運"},
-};
-
-function triggerEvent(kind){
-  const deck=EVENTS[kind];
-  const result=deck[Math.floor(Math.random()*deck.length)]();
-  const m=KIND_META[kind];
-  showEvent(kind,m.label,m.icon,m.label==="導師"?"導師時間 🎊":(m.label+"事件 🎊"),result);
-  sfx.event();
-  confettiBurst(["🎉","⭐","❤️","🎊","✨"]);
-}
-
-/* ============================================================
-   抽學生
-============================================================ */
-function drawStudent(ref){
-  const s=state.students[ref];
-  state.lastSeat=s.seat;
-  showStudent(ref);
-  const gi=EDGE_INDICES[ref];
-  cellEls[gi].classList.remove("landed"); void cellEls[gi].offsetWidth; cellEls[gi].classList.add("landed");
-  sfx.land();
-  confettiBurst(["🎉","⭐","❤️","🏆","✨"]);
-}
-function manualPick(gi){
-  const data=state.cells[gi];
-  if(data.type==="student"){ drawStudent(data.ref); positionTokenToStudent(data.ref); }
-}
-function positionTokenToStudent(ref){
-  state.tokenPos=EDGE_INDICES[ref];
-  positionToken(state.tokenPos);
-}
-
-/* ============================================================
-   擲骰與移動
-============================================================ */
-const rollBtn=document.getElementById("rollBtn");
-let rolling=false;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
-async function roll(){
-  if(rolling || state.students.length===0) return;
-  rolling=true; rollBtn.disabled=true;
-  sfx.ensure(); sfx.dice();
-
-  die1.classList.add("rolling"); die2.classList.add("rolling");
-  const spin=setInterval(()=>{ drawDie(die1,1+Math.floor(Math.random()*6)); drawDie(die2,1+Math.floor(Math.random()*6)); },80);
-  await sleep(750);
-  clearInterval(spin);
-  const d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
-  drawDie(die1,d1); drawDie(die2,d2);
-  die1.classList.remove("rolling"); die2.classList.remove("rolling");
-  const steps=d1+d2;
-
-  stage.innerHTML=`<div class="hint"><span class="big">🎲 ${d1} + ${d2} = ${steps}</span>棋子前進中…</div>`;
-  await sleep(250);
-
-  // 逐格移動
-  for(let s=0;s<steps;s++){
-    state.tokenPos=(state.tokenPos+1)%40;
-    positionToken(state.tokenPos);
-    token.classList.remove("hop"); void token.offsetWidth; token.classList.add("hop");
-    const el=cellEls[state.tokenPos];
-    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
-    sfx.step(s);
-    await sleep(255);
-  }
-
-  // 判定落點
-  const data=state.cells[state.tokenPos];
-  if(data.type==="student"){ drawStudent(data.ref); }
-  else if(data.type==="corner"){ triggerEvent(data.kind); }
-  else if(data.type==="filler"){ triggerEvent(data.kind); }
-
-  rolling=false; rollBtn.disabled=false;
-  rollBtn.innerHTML="🎲 再抽一次";
-}
-rollBtn.addEventListener("click",roll);
-
-/* ============================================================
-   彩帶效果
-============================================================ */
-const confettiBox=document.getElementById("confetti");
-function confettiBurst(emojis){
-  const n=26;
-  for(let i=0;i<n;i++){
-    const c=document.createElement("div");
-    c.className="conf";
-    c.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-    const startX=10+Math.random()*80;
-    c.style.left=startX+"vw";
-    c.style.top="-6vh";
-    c.style.fontSize=(18+Math.random()*22)+"px";
-    const dur=1.6+Math.random()*1.4;
-    c.style.animation=`fall ${dur}s ease-in forwards`;
-    c.style.transform=`translateX(${(Math.random()*40-20)}px)`;
-    confettiBox.appendChild(c);
-    setTimeout(()=>c.remove(),dur*1000+100);
-  }
-}
-function miniHearts(){
-  for(let i=0;i<8;i++){
-    const c=document.createElement("div");
-    c.className="conf"; c.textContent="❤️";
-    c.style.left=(42+Math.random()*16)+"vw"; c.style.top="40vh";
-    c.style.fontSize=(16+Math.random()*16)+"px";
-    const dur=1+Math.random();
-    c.style.animation=`fall ${dur}s ease-in forwards`;
-    confettiBox.appendChild(c);
-    setTimeout(()=>c.remove(),dur*1000+100);
-  }
-}
-
-/* ============================================================
-   設定對話框
-============================================================ */
-const overlay=document.getElementById("settingsOverlay");
-const inpClass=document.getElementById("inpClass");
-const inpMask=document.getElementById("inpMask");
-const inpStudents=document.getElementById("inpStudents");
-
-function openSettings(){
-  inpClass.value=state.className;
-  inpMask.checked=state.mask;
-  inpStudents.value=state.students.map(s=>`${s.seat} ${s.name}`).join("\n");
-  overlay.classList.add("show");
-}
-function closeSettings(){ overlay.classList.remove("show"); }
-
-document.getElementById("btnSettings").onclick=openSettings;
-document.getElementById("btnCancel").onclick=closeSettings;
-overlay.addEventListener("click",e=>{ if(e.target===overlay) closeSettings(); });
-
-document.getElementById("btnApply").onclick=()=>{
-  const name=inpClass.value.trim()||"快樂班";
-  const parsed=parseList(inpStudents.value);
-  if(parsed.length===0){ alert("名單不可空白，請至少輸入一位學生。"); return; }
-  state.className=name;
-  state.mask=inpMask.checked;
-  state.students=parsed;
-  state.tokenPos=0;
-  state.lastSeat=null;
-  applyState();
-  closeSettings();
-};
-document.getElementById("btnResetScores").onclick=()=>{
-  if(!confirm("確定要將所有分數歸零嗎？")) return;
-  state.students.forEach((s,i)=>{s.score=0; });
-  buildCells(); renderBoard(); showHint();
-};
-document.getElementById("btnResetAll").onclick=()=>{
-  if(!confirm("確定要還原成預設班級與名單嗎？（分數會清空）")) return;
-  loadDefaults(); applyState(); closeSettings();
-};
-
-/* ============================================================
-   下載名單
-============================================================ */
-document.getElementById("btnDownload").onclick=()=>{
-  const now=new Date();
-  const stamp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-  let txt=`班級：${state.className}\n匯出日期：${stamp}\n姓名遮罩：${state.mask?"開啟":"關閉"}\n`;
-  txt+="────────────────────\n座號\t姓名\t分數(❤️)\n";
-  const sorted=[...state.students].sort((a,b)=>a.seat-b.seat);
-  sorted.forEach(s=>{ txt+=`${s.seat}\t${maskName(s.name)}\t${s.score}\n`; });
-  txt+="────────────────────\n";
-  const total=state.students.reduce((a,s)=>a+s.score,0);
-  txt+=`總人數：${state.students.length}　總分：${total} ❤️\n`;
-  const blob=new Blob([txt],{type:"text/plain;charset=utf-8"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url; a.download=`${state.className}_分數清單_${stamp}.txt`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-};
-
-/* ============================================================
-   初始化
-============================================================ */
-function loadDefaults(){
-  state.className=DEFAULT_CLASS;
-  state.mask=true;
-  state.students=parseList(DEFAULT_LIST);
-  state.tokenPos=0;
-  state.lastSeat=null;
-}
-function applyState(){
-  document.getElementById("clsName").textContent=state.className;
-  buildCells();
-  renderBoard();
-  showHint();
-  rollBtn.innerHTML="🎲 擲骰抽籤";
-}
-
-loadDefaults();
-applyState();
-
-window.addEventListener("resize",()=>{ updateCellVar(); positionToken(state.tokenPos,true); });
-window.addEventListener("load",()=>{ updateCellVar(); positionToken(state.tokenPos,true); });
-</script>
+  <!-- 引入音效與主腳本 -->
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
